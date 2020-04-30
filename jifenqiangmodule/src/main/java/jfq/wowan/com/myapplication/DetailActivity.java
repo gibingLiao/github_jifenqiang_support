@@ -177,17 +177,19 @@ public class DetailActivity extends AppCompatActivity implements SwipeRefreshLay
     }
 
     @Override
-    protected void onDestroy() {
-        // TODO Auto-generated method stub
-        super.onDestroy();
+    public void finish() {
+        super.finish();
         mBooleanPageNeedLoad = false;
         //判断栈顶是否是detailactivity，如果不是，回收可能与下载建立连接的web
         if(AppManager.getInstance().currentActivity() == null ||! (AppManager.getInstance().currentActivity() instanceof DetailActivity)){
             mWebViewSingleInstance = null;//置空等待回收
         }
+    }
 
-
-
+    @Override
+    protected void onDestroy() {
+        // TODO Auto-generated method stub
+        super.onDestroy();
     }
 
     @Override

@@ -231,7 +231,7 @@ public class X5JavaScriptInterface {
             if (Build.VERSION.SDK_INT >= 24) { // 判读版本是否在7.0以上
                 // 参数1 上下文, 参数2 Provider主机地址 和配置文件中保持一致 参数3
                 SharedPreferences sp = context.getSharedPreferences("authorities", Activity.MODE_PRIVATE);
-                String authorities = sp.getString("authorities",context.getPackageName()+".fileProvider");
+                String authorities = sp.getString("authorities", context.getPackageName() + ".fileProvider");
                 Uri apkUri = FileProvider.getUriForFile(context, authorities, file);
                 // 添加这一句表示对目标应用临时授权该Uri所代表的文件
                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -685,9 +685,20 @@ public class X5JavaScriptInterface {
         }
         Intent intent = new Intent(mActivity, DetailActivity.class);
         intent.putExtra("url", url + "&issdk=1&sdkver=" + WowanIndex.mStringVer);
-        Log.e("frefreg", url + "&issdk=1&sdkver=" + WowanIndex.mStringVer);
         mActivity.startActivity(intent);
     }
+
+    /**
+     * 当前web加载某个地址
+     */
+    @JavascriptInterface
+    public void loadWebUrl(String url) {
+        if (TextUtils.isEmpty(url) || mWebView == null) {
+            return;
+        }
+        mWebView.loadUrl(url);
+    }
+
 
     /**
      * web页面调用打开广告详细页面
