@@ -692,11 +692,16 @@ public class X5JavaScriptInterface {
      * 当前web加载某个地址
      */
     @JavascriptInterface
-    public void loadWebUrl(String url) {
+    public void loadWebUrl(final String url) {
         if (TextUtils.isEmpty(url) || mWebView == null) {
             return;
         }
-        mWebView.loadUrl(url);
+        mWebView.post(new Runnable() {
+            @Override
+            public void run() {
+                mWebView.loadUrl(url);
+            }
+        });
     }
 
 

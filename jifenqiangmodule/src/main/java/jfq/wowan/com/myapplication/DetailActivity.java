@@ -259,11 +259,13 @@ public class DetailActivity extends AppCompatActivity implements SwipeRefreshLay
     @Override
     public void onRefresh() {
         // TODO Auto-generated method stub
-
-        if (!TextUtils.isEmpty(mStringUrl)) {
-            mWebView.loadUrl(mStringUrl);
+        String url = mWebView.getUrl();
+        if(TextUtils.isEmpty(url)){
+            url = mStringUrl;
         }
-
+        if (!TextUtils.isEmpty(url)) {
+            mWebView.loadUrl(url);
+        }
     }
 
     private String mStringApkPath;

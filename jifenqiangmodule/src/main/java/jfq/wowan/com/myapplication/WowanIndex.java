@@ -231,8 +231,12 @@ public class WowanIndex extends AppCompatActivity implements SwipeRefreshLayout.
 
     @Override
     public void onRefresh() {
-        if (!TextUtils.isEmpty(mStringUrl)) {
-            mWebView.loadUrl(mStringUrl);
+        String url = mWebView.getUrl();
+        if (TextUtils.isEmpty(url)) {
+            url = mStringUrl;
+        }
+        if (!TextUtils.isEmpty(url)) {
+            mWebView.loadUrl(url);
         }
     }
 }
