@@ -117,4 +117,29 @@ public class PlayMeUtil {
         context.startActivity(intent);
     }
 
+    /**
+     * 激活index页面(如果同cid有多个渠道，传入appid和appname区分数据)
+     */
+    public static void openIndex(Context context,String cid,String cuid,String deviceid,String oaid,String key,String appid,String appname){
+        if (context == null) {
+            return;
+        }
+        Intent intent = new Intent(context, WowanIndex.class);
+        //渠道id
+        intent.putExtra("cid", cid);
+        //用户id
+        intent.putExtra("cuid", cuid);
+        //手机设备号
+        intent.putExtra("deviceid", deviceid);
+        //为了android10.0手机数据匹配，这里传入由移动安全联盟sdk提供的oaid值
+        intent.putExtra("oaid", oaid);
+        //秘钥
+        intent.putExtra("key",key);
+        //appid
+        intent.putExtra("appid",appid);
+        //appname
+        intent.putExtra("appname",appname);
+        context.startActivity(intent);
+    }
+
 }

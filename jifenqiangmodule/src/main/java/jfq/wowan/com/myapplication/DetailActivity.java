@@ -286,7 +286,6 @@ public class DetailActivity extends AppCompatActivity implements SwipeRefreshLay
                     install(this, file);
                 }
             }
-
         }
     }
 
