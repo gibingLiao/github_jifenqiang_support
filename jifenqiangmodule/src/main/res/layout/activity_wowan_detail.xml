@@ -7,7 +7,7 @@
     <FrameLayout
         android:id="@+id/frameLayoutId_detail"
         android:layout_width="fill_parent"
-        android:layout_height="50dip"
+        android:layout_height="45dp"
         android:background="#f7f7f7" >
 
         <ImageButton
@@ -18,10 +18,12 @@
             android:background="#00000000"
             android:src="@mipmap/btn_back_normal"/>
         
-        <TextView 
+        <TextView
             android:id="@+id/tv_wowan_title_detail"
             android:layout_gravity="center"
             android:text=""
+            android:textColor="#2d2d2d"
+            android:textSize="15.5dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 

@@ -3,6 +3,7 @@ package jfq.wowan.com.myapplication;
 import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +39,7 @@ import android.os.Handler;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.FileProvider;
+import android.text.Html;
 import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
@@ -732,6 +734,27 @@ public class X5JavaScriptInterface {
             return;
         }
         AppManager.getInstance().finishActivity(mActivity);
+    }
+
+    /**
+     * 设置当前页面的title
+     */
+    @JavascriptInterface
+    public void setTitle(String title) {
+        if (mActivity == null || TextUtils.isEmpty(title)) {
+            return;
+        }
+        if (mActivity instanceof WowanIndex) {
+            WowanIndex wowanIndex = (WowanIndex) mActivity;
+            if (wowanIndex.mTextTitle != null) {
+                wowanIndex.mTextTitle.setText(Html.fromHtml(title));
+            }
+        } else if (mActivity instanceof DetailActivity) {
+            DetailActivity detailActivity = (DetailActivity) mActivity;
+            if (detailActivity.mTextTitle != null) {
+                detailActivity.mTextTitle.setText(Html.fromHtml(title));
+            }
+        }
     }
 
 

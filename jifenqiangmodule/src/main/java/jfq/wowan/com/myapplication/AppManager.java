@@ -46,14 +46,21 @@ public class AppManager {
      * 获取当前Activity（堆栈中最后一个压入的）
      */
     public Activity currentActivity() {
-        Activity activity = activityStack.lastElement();
-        return activity;
+        if (activityStack != null && activityStack.size() > 0) {
+            Activity activity = activityStack.lastElement();
+            return activity;
+        }
+        return null;
+
     }
 
     /**
      * 结束当前Activity（堆栈中最后一个压入的）
      */
     public void finishActivity() {
+        if (activityStack == null || activityStack.size() <= 0) {
+            return;
+        }
         Activity activity = activityStack.lastElement();
         finishActivity(activity);
     }
@@ -70,7 +77,7 @@ public class AppManager {
      * 结束指定的Activity
      */
     public void finishActivity(Activity activity) {
-        if (activity != null) {
+        if (activity != null && activityStack.contains(activity)) {
             activityStack.remove(activity);
             activity.finish();
             activity = null;

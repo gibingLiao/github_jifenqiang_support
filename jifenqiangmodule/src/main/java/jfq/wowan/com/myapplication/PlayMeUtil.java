@@ -5,10 +5,12 @@ import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.text.TextUtils;
 
 import com.liulishuo.filedownloader.FileDownloader;
 
+import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
@@ -54,27 +56,11 @@ public class PlayMeUtil {
     }
 
     /**
-     * 原生调用打开广告详细页面
-     *
-     * @param url     打开地址
-     * @param context
-     * @param cid  渠道号
-     */
-    public static void openAdDetail(Context context,String cid, String url) {
-        if (TextUtils.isEmpty(url) || context == null) {
-            return;
-        }
-        Intent intent = new Intent(context, DetailActivity.class);
-        intent.putExtra("url", url + "&issdk=1&sdkver=" + WowanIndex.mStringVer);
-        intent.putExtra("cid", cid);
-        context.startActivity(intent);
-    }
-
-    /**
      * 初始化sdk
+     *
      * @param authorities provider的author
      */
-    public static void init(Application application,String authorities) {
+    public static void init(Application application, String authorities) {
         if (application == null) {
             return;
         }
@@ -97,9 +83,81 @@ public class PlayMeUtil {
     }
 
     /**
+     * 原生调用打开广告详细页面
+     *
+     * @param url     打开地址
+     * @param context
+     * @param cid     渠道号
+     */
+    public static void openAdDetail(Context context, String cid, String url) {
+        if (TextUtils.isEmpty(url) || context == null) {
+            return;
+        }
+        Intent intent = new Intent(context, DetailActivity.class);
+        intent.putExtra("url", url + "&issdk=1&sdkver=" + WowanIndex.mStringVer);
+        intent.putExtra("cid", cid);
+        context.startActivity(intent);
+    }
+
+    /**
+     * 原生调用打开广告详细页面，通过adid
+     *
+     * @param context
+     * @param cid      渠道号
+     * @param cuid     用户标识userid、
+     * @param deviceid 设备号
+     * @param oaid     移动安全联盟oaid
+     * @param key      秘钥
+     */
+    public static void openAdDetail(Context context, String cid, String cuid, String adid, String deviceid, String oaid, String key, String appid, String appname) {
+        if (context == null) {
+            return;
+        }
+        Intent intent = new Intent(context, DetailActivity.class);
+        String md5Str = "t=2&cid=" + cid + "&cuid=" + cuid + "&deviceid=" + deviceid + "&unixt="
+                + System.currentTimeMillis();
+        String keycode = PlayMeUtil.encrypt(md5Str + key);
+
+        String osversion = "";
+        String phonemodel = "";
+        try {
+            osversion = Build.VERSION.RELEASE; // 操作系统版本号
+            phonemodel = Build.MODEL; // 手机型号
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        md5Str = md5Str + "&keycode=" + keycode + "&issdk=1&sdkver=" + WowanIndex.mStringVer + "&oaid=" + oaid + "&osversion=" + osversion + "&phonemodel=" + phonemodel + "&adid=" + adid;
+        String mStringUrl = "https://m.playmy.cn/View/Wall_AdInfo.aspx?" + md5Str;
+        if (!TextUtils.isEmpty(appid)) {
+            mStringUrl = mStringUrl + "&appid=" + appid;
+        }
+        if (!TextUtils.isEmpty(appname)) {
+            mStringUrl = mStringUrl + "&appname=" + URLEncoder.encode(appname);
+        }
+        intent.putExtra("url", mStringUrl);
+        intent.putExtra("cid", cid);
+        context.startActivity(intent);
+    }
+
+    /**
+     * 原生调用打开广告详细页面，通过adid
+     *
+     * @param context
+     * @param cid      渠道号
+     * @param cuid     用户标识userid、
+     * @param deviceid 设备号
+     * @param oaid     移动安全联盟oaid
+     * @param key      秘钥
+     */
+    public static void openAdDetail(Context context, String cid, String cuid, String adid, String deviceid, String oaid, String key) {
+        openAdDetail(context, cid, cuid, adid, deviceid, adid, key, "", "");
+    }
+
+
+    /**
      * 激活index页面
      */
-    public static void openIndex(Context context,String cid,String cuid,String deviceid,String oaid,String key){
+    public static void openIndex(Context context, String cid, String cuid, String deviceid, String oaid, String key) {
         if (context == null) {
             return;
         }
@@ -113,14 +171,14 @@ public class PlayMeUtil {
         //为了android10.0手机数据匹配，这里传入由移动安全联盟sdk提供的oaid值
         intent.putExtra("oaid", oaid);
         //秘钥
-        intent.putExtra("key",key);
+        intent.putExtra("key", key);
         context.startActivity(intent);
     }
 
     /**
      * 激活index页面(如果同cid有多个渠道，传入appid和appname区分数据)
      */
-    public static void openIndex(Context context,String cid,String cuid,String deviceid,String oaid,String key,String appid,String appname){
+    public static void openIndex(Context context, String cid, String cuid, String deviceid, String oaid, String key, String appid, String appname) {
         if (context == null) {
             return;
         }
@@ -134,11 +192,11 @@ public class PlayMeUtil {
         //为了android10.0手机数据匹配，这里传入由移动安全联盟sdk提供的oaid值
         intent.putExtra("oaid", oaid);
         //秘钥
-        intent.putExtra("key",key);
+        intent.putExtra("key", key);
         //appid
-        intent.putExtra("appid",appid);
+        intent.putExtra("appid", appid);
         //appname
-        intent.putExtra("appname",appname);
+        intent.putExtra("appname", appname);
         context.startActivity(intent);
     }
 

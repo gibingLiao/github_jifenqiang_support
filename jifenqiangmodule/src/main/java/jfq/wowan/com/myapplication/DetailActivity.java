@@ -14,6 +14,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.FileProvider;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -23,6 +24,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ImageButton;
+import android.widget.TextView;
 
 import java.io.File;
 import java.util.Map;
@@ -53,6 +55,8 @@ public class DetailActivity extends AppCompatActivity implements SwipeRefreshLay
 
     private ImageButton mButton;
 
+    public TextView mTextTitle;
+
     // 第一次不刷新、
     private boolean mBooleanPageNeedLoad;
 
@@ -71,9 +75,11 @@ public class DetailActivity extends AppCompatActivity implements SwipeRefreshLay
 
         initView();
     }
+
     private void initView() {
         // TODO Auto-generated method stub
         mButton = (ImageButton) findViewById(R.id.top_back_detail);
+        mTextTitle = findViewById(R.id.tv_wowan_title_detail);
 
         mWebView = (WebView) findViewById(R.id.webview_detail);
         WebSettings webSettings = mWebView.getSettings();
@@ -85,10 +91,10 @@ public class DetailActivity extends AppCompatActivity implements SwipeRefreshLay
             webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         }
 
-		/*
-		 * NORMAL：正常显示，没有渲染变化。 SINGLE_COLUMN：把所有内容放到WebView组件等宽的一列中。
-		 * //这个是强制的，把网页都挤变形了 NARROW_COLUMNS：可能的话，使所有列的宽度不超过屏幕宽度。 //好像是默认的
-		 */
+        /*
+         * NORMAL：正常显示，没有渲染变化。 SINGLE_COLUMN：把所有内容放到WebView组件等宽的一列中。
+         * //这个是强制的，把网页都挤变形了 NARROW_COLUMNS：可能的话，使所有列的宽度不超过屏幕宽度。 //好像是默认的
+         */
         webSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NARROW_COLUMNS);
         webSettings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         webSettings.setDefaultTextEncodingName("UTF-8");
@@ -105,6 +111,12 @@ public class DetailActivity extends AppCompatActivity implements SwipeRefreshLay
                     // 关闭加载进度条
                     mRefreshLayout.setRefreshing(false);
                 }
+
+                // 设置标题
+                if (null != mTextTitle) {
+                    mTextTitle.setText(view.getTitle());
+                }
+
             }
 
             @Override
@@ -181,8 +193,9 @@ public class DetailActivity extends AppCompatActivity implements SwipeRefreshLay
         super.finish();
         mBooleanPageNeedLoad = false;
         //判断栈顶是否是detailactivity，如果不是，回收可能与下载建立连接的web
-        if(AppManager.getInstance().currentActivity() == null ||! (AppManager.getInstance().currentActivity() instanceof DetailActivity)){
+        if (AppManager.getInstance().currentActivity() == null || !(AppManager.getInstance().currentActivity() instanceof DetailActivity)) {
             mWebViewSingleInstance = null;//置空等待回收
+//            Log.e("huishou", "finish: " );
         }
     }
 
@@ -198,9 +211,9 @@ public class DetailActivity extends AppCompatActivity implements SwipeRefreshLay
         super.onResume();
 
         mWebViewSingleInstance = mWebView;//可能打开了另一个页面，将此web指向对象改变，这里指向回来
-        if(!TextUtils.isEmpty(mStringUrl)){
-           String adid = getParam(mStringUrl,"adid");
-            if(!TextUtils.isEmpty(adid)){
+        if (!TextUtils.isEmpty(mStringUrl)) {
+            String adid = getParam(mStringUrl, "adid");
+            if (!TextUtils.isEmpty(adid)) {
                 try {
                     int intAdid = Integer.parseInt(adid);
                     mWebViewSingleInstance.setTag(intAdid);
@@ -230,9 +243,9 @@ public class DetailActivity extends AppCompatActivity implements SwipeRefreshLay
     }
 
 
-    private  String getParam(String url, String name) {
+    private String getParam(String url, String name) {
         try {
-            if(TextUtils.isEmpty(url)||TextUtils.isEmpty(name)){
+            if (TextUtils.isEmpty(url) || TextUtils.isEmpty(name)) {
                 return "";
             }
             String[] urlParts = url.split("\\?");
@@ -244,7 +257,7 @@ public class DetailActivity extends AppCompatActivity implements SwipeRefreshLay
             String[] params = urlParts[1].split("&");
             for (String param : params) {
                 String[] keyValue = param.split("=");
-                if(name.equals(keyValue[0])){
+                if (name.equals(keyValue[0])) {
                     return keyValue[1];
                 }
             }
@@ -260,7 +273,7 @@ public class DetailActivity extends AppCompatActivity implements SwipeRefreshLay
     public void onRefresh() {
         // TODO Auto-generated method stub
         String url = mWebView.getUrl();
-        if(TextUtils.isEmpty(url)){
+        if (TextUtils.isEmpty(url)) {
             url = mStringUrl;
         }
         if (!TextUtils.isEmpty(url)) {
@@ -302,7 +315,7 @@ public class DetailActivity extends AppCompatActivity implements SwipeRefreshLay
             if (Build.VERSION.SDK_INT >= 24) { // 判读版本是否在7.0以上
                 // 参数1 上下文, 参数2 Provider主机地址 和配置文件中保持一致 参数3
                 SharedPreferences sp = context.getSharedPreferences("authorities", Activity.MODE_PRIVATE);
-                String authorities = sp.getString("authorities",context.getPackageName()+".fileProvider");
+                String authorities = sp.getString("authorities", context.getPackageName() + ".fileProvider");
                 Uri apkUri = FileProvider.getUriForFile(context, authorities, file);
 
                 // 添加这一句表示对目标应用临时授权该Uri所代表的文件
