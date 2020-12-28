@@ -1,49 +1,77 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical" >
+    android:orientation="vertical">
 
-    <FrameLayout
-        android:id="@+id/frameLayoutId_detail"
-        android:layout_width="fill_parent"
-        android:layout_height="45dp"
-        android:background="#f7f7f7" >
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <ImageButton
-            android:id="@+id/top_back_detail"
-            android:layout_width="40dp"
-            android:layout_height="match_parent"
-            android:layout_gravity="left|center"
-            android:background="#00000000"
-            android:src="@mipmap/btn_back_normal"/>
-        
-        <TextView
-            android:id="@+id/tv_wowan_title_detail"
-            android:layout_gravity="center"
-            android:text=""
-            android:textColor="#2d2d2d"
-            android:textSize="15.5dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+        <FrameLayout
+            android:id="@+id/frameLayoutId_detail"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:background="#f7f7f7">
 
-    </FrameLayout>
-    
-     <View android:layout_width="match_parent"
-          android:id="@+id/viewId_detail"
-          android:layout_height="1dp"
-          android:background="#d4d4d4"/>
-    
-    <android.support.v4.widget.SwipeRefreshLayout
-        android:id="@+id/main_srl_detail"
+            <ImageButton
+                android:id="@+id/top_back_detail"
+                android:layout_width="40dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="left|center"
+                android:background="#00000000"
+                android:src="@mipmap/btn_back_normal" />
+
+            <TextView
+                android:id="@+id/tv_wowan_title_detail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text=""
+                android:textColor="#2d2d2d"
+                android:textSize="15.5dp" />
+
+        </FrameLayout>
+
+        <View
+            android:id="@+id/viewId_detail"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#d4d4d4" />
+
+        <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/main_srl_detail"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <WebView
+                android:id="@+id/webview_detail"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scrollbars="none" />
+        </android.support.v4.widget.SwipeRefreshLayout>
+
+    </LinearLayout>
+
+
+    <RelativeLayout
+        android:visibility="gone"
+        android:id="@+id/rl_loading"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <WebView
-            android:id="@+id/webview_detail"
+        <ProgressBar
+            android:visibility="gone"
+            android:id="@+id/pro_webview"
+            style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scrollbars="none" />
-    </android.support.v4.widget.SwipeRefreshLayout>
+            android:layout_height="2dp"
+            android:layout_marginTop="45dp"
+            android:max="100"
+            android:progress="0"
+            android:progressDrawable="@drawable/pro_wowan_webview_detail"
+            android:secondaryProgress="0" />
 
-</LinearLayout>
+    </RelativeLayout>
+
+</RelativeLayout>

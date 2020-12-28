@@ -10,6 +10,8 @@ import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.support.v4.content.FileProvider;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -24,6 +26,8 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.io.File;
@@ -60,6 +64,48 @@ public class DetailActivity extends AppCompatActivity implements SwipeRefreshLay
     // 第一次不刷新、
     private boolean mBooleanPageNeedLoad;
 
+
+    private Handler mHandler = new Handler(Looper.getMainLooper());
+
+    private int mIntLoadingRealProgress;//当前web加载真正的进度
+
+    private int progress;
+    private Runnable mRunnableProgress = new Runnable() {
+        @Override
+        public void run() {
+            progress = progress + 2;
+            if (progress >= 100) {
+                progress = 100;
+            }
+            if (progress < mIntLoadingRealProgress) {
+                mHandler.post(this);
+            }
+
+            Log.e("onProgressChanged", "run: " + progress);
+
+            if (mProgressBar != null && mProgressBar.getVisibility() == View.VISIBLE) {
+                mProgressBar.setProgress(progress);
+            }
+
+            if (progress >= 100) {
+                if (mRelativeLoading != null && mRelativeLoading.getVisibility() == View.VISIBLE) {
+                    mRelativeLoading.setVisibility(View.GONE);
+                }
+
+                if (mProgressBar != null && mProgressBar.getVisibility() == View.VISIBLE) {
+                    mProgressBar.setVisibility(View.GONE);
+                }
+            }
+        }
+    };
+
+    //加载的loading布局
+    private RelativeLayout mRelativeLoading;
+    //加载进度
+    private ProgressBar mProgressBar;
+
+    private boolean showDetailLoading;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -80,6 +126,20 @@ public class DetailActivity extends AppCompatActivity implements SwipeRefreshLay
         // TODO Auto-generated method stub
         mButton = (ImageButton) findViewById(R.id.top_back_detail);
         mTextTitle = findViewById(R.id.tv_wowan_title_detail);
+
+        mRelativeLoading = findViewById(R.id.rl_loading);
+
+        mProgressBar = findViewById(R.id.pro_webview);
+        if (mRelativeLoading != null) {
+            mRelativeLoading.setVisibility(View.GONE);
+        }
+        if (mProgressBar != null) {
+            mProgressBar.setVisibility(View.GONE);
+        }
+
+
+        SharedPreferences sp = getSharedPreferences("authorities", Activity.MODE_PRIVATE);
+        showDetailLoading =sp.getBoolean("showDetailLoading", false);
 
         mWebView = (WebView) findViewById(R.id.webview_detail);
         WebSettings webSettings = mWebView.getSettings();
@@ -102,11 +162,57 @@ public class DetailActivity extends AppCompatActivity implements SwipeRefreshLay
         webSettings.setRenderPriority(WebSettings.RenderPriority.HIGH);
         webSettings.setTextZoom(100);
 
-        mWebView.setWebChromeClient(new WebChromeClient());
+        mWebView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+                super.onProgressChanged(view, newProgress);
+                //记录最新的web进度
+                if (newProgress > mIntLoadingRealProgress) {
+                    mIntLoadingRealProgress = newProgress;
+                    //开始做进度progress展示
+                    if (mHandler != null && mRunnableProgress != null) {
+                        mHandler.removeCallbacks(mRunnableProgress);
+                        mHandler.post(mRunnableProgress);
+                    }
+
+                    if (showDetailLoading) {
+                        if (mRelativeLoading != null && mRelativeLoading.getVisibility() != View.VISIBLE) {
+                            mRelativeLoading.setVisibility(View.VISIBLE);
+                        }
+
+                        if (mProgressBar != null && mProgressBar.getVisibility() != View.VISIBLE) {
+                            mProgressBar.setVisibility(View.VISIBLE);
+                        }
+                    }
+
+
+                }
+            }
+        });
         mWebView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+
+                //做一手防御，2秒钟后进度消失
+                if ((mRelativeLoading != null && mRelativeLoading.getVisibility() == View.VISIBLE)
+                        || (mProgressBar != null && mProgressBar.getVisibility() == View.VISIBLE)) {
+                    mHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (mRelativeLoading != null && mRelativeLoading.getVisibility() == View.VISIBLE) {
+                                mRelativeLoading.setVisibility(View.GONE);
+                            }
+
+                            if (mProgressBar != null && mProgressBar.getVisibility() == View.VISIBLE) {
+                                mProgressBar.setVisibility(View.GONE);
+                            }
+
+                        }
+                    }, 2000);
+
+                }
+
                 if (null != mRefreshLayout) {
                     // 关闭加载进度条
                     mRefreshLayout.setRefreshing(false);
@@ -192,6 +298,10 @@ public class DetailActivity extends AppCompatActivity implements SwipeRefreshLay
     public void finish() {
         super.finish();
         mBooleanPageNeedLoad = false;
+
+        if (mHandler != null && mRunnableProgress != null) {
+            mHandler.removeCallbacks(mRunnableProgress);
+        }
         //判断栈顶是否是detailactivity，如果不是，回收可能与下载建立连接的web
         if (AppManager.getInstance().currentActivity() == null || !(AppManager.getInstance().currentActivity() instanceof DetailActivity)) {
             mWebViewSingleInstance = null;//置空等待回收

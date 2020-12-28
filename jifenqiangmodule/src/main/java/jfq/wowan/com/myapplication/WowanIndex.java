@@ -1,9 +1,13 @@
 package jfq.wowan.com.myapplication;
 
+import android.app.Activity;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.net.http.SslError;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -17,6 +21,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.liulishuo.filedownloader.FileDownloader;
@@ -49,9 +55,9 @@ public class WowanIndex extends AppCompatActivity implements SwipeRefreshLayout.
     private boolean mBooleanPageNeedLoad;
 
 
-    private String cid="";//渠道id
-    private String cuid="";//用户标识id
-    private String deviceid="";//手机设备号
+    private String cid = "";//渠道id
+    private String cuid = "";//用户标识id
+    private String deviceid = "";//手机设备号
     private String oaid = "";//10.0oaid
 
     private String appid = "";//同cid的多个渠道通过appid和appname统计数据
@@ -63,6 +69,45 @@ public class WowanIndex extends AppCompatActivity implements SwipeRefreshLayout.
 
     public static final String mStringVer = "1.0";
 
+    private Handler mHandler = new Handler(Looper.getMainLooper());
+
+    private int mIntLoadingRealProgress;//当前web加载真正的进度
+
+    private int progress;
+    private Runnable mRunnableProgress = new Runnable() {
+        @Override
+        public void run() {
+            progress = progress + 2;
+            if (progress >= 100) {
+                progress = 100;
+            }
+            if (progress < mIntLoadingRealProgress) {
+                mHandler.post(this);
+            }
+
+
+            if (mProgressBar != null && mProgressBar.getVisibility() == View.VISIBLE) {
+                mProgressBar.setProgress(progress);
+            }
+
+            if (progress >= 100) {
+                if (mRelativeLoading != null && mRelativeLoading.getVisibility() == View.VISIBLE) {
+                    mRelativeLoading.setVisibility(View.GONE);
+                }
+
+                if (mProgressBar != null && mProgressBar.getVisibility() == View.VISIBLE) {
+                    mProgressBar.setVisibility(View.GONE);
+                }
+            }
+        }
+    };
+
+    //加载的loading布局
+    private RelativeLayout mRelativeLoading;
+    //加载进度
+    private ProgressBar mProgressBar;
+
+    private boolean showIndexLoading;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -74,10 +119,10 @@ public class WowanIndex extends AppCompatActivity implements SwipeRefreshLayout.
         cuid = getIntent().getStringExtra("cuid");
         deviceid = getIntent().getStringExtra("deviceid");
         mStringKey = getIntent().getStringExtra("key");
-        oaid =  getIntent().getStringExtra("oaid");
+        oaid = getIntent().getStringExtra("oaid");
         appid = getIntent().getStringExtra("appid");
         appname = getIntent().getStringExtra("appname");
-        if (TextUtils.isEmpty(cid) || TextUtils.isEmpty(cuid) ||TextUtils.isEmpty(mStringKey)) {
+        if (TextUtils.isEmpty(cid) || TextUtils.isEmpty(cuid) || TextUtils.isEmpty(mStringKey)) {
             //清理activity
             AppManager.getInstance().finishActivity();
         }
@@ -86,20 +131,20 @@ public class WowanIndex extends AppCompatActivity implements SwipeRefreshLayout.
                 + System.currentTimeMillis();
         keycode = PlayMeUtil.encrypt(md5Str + mStringKey);
 
-        String osversion="";
-        String phonemodel="";
+        String osversion = "";
+        String phonemodel = "";
         try {
-            osversion  = Build.VERSION.RELEASE; // 操作系统版本号
+            osversion = Build.VERSION.RELEASE; // 操作系统版本号
             phonemodel = Build.MODEL; // 手机型号
         } catch (Exception e) {
             e.printStackTrace();
         }
-        md5Str = md5Str + "&keycode=" + keycode + "&issdk=1&sdkver=" + mStringVer+"&oaid="+oaid+"&osversion="+osversion+"&phonemodel="+phonemodel;
+        md5Str = md5Str + "&keycode=" + keycode + "&issdk=1&sdkver=" + mStringVer + "&oaid=" + oaid + "&osversion=" + osversion + "&phonemodel=" + phonemodel;
         mStringUrl = "https://m.playmy.cn/View/Wall_AdList.aspx?" + md5Str;
-        if(!TextUtils.isEmpty(appid)){
+        if (!TextUtils.isEmpty(appid)) {
             mStringUrl = mStringUrl + "&appid=" + appid;
         }
-        if(!TextUtils.isEmpty(appname)){
+        if (!TextUtils.isEmpty(appname)) {
             mStringUrl = mStringUrl + "&appname=" + URLEncoder.encode(appname);
         }
 
@@ -110,6 +155,21 @@ public class WowanIndex extends AppCompatActivity implements SwipeRefreshLayout.
     private void initView() {
 
         mButton = (ImageButton) findViewById(R.id.top_back);
+
+        mRelativeLoading = findViewById(R.id.rl_loading);
+
+        mProgressBar = findViewById(R.id.pro_webview);
+
+        if (mRelativeLoading != null) {
+            mRelativeLoading.setVisibility(View.GONE);
+        }
+        if (mProgressBar != null) {
+            mProgressBar.setVisibility(View.GONE);
+        }
+
+
+        SharedPreferences sp = getSharedPreferences("authorities", Activity.MODE_PRIVATE);
+        showIndexLoading = sp.getBoolean("showIndexLoading", false);
 
         mTextTitle = findViewById(R.id.tv_wowan_title);
 
@@ -123,10 +183,10 @@ public class WowanIndex extends AppCompatActivity implements SwipeRefreshLayout.
             webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         }
 
-		/*
+        /*
          * NORMAL：正常显示，没有渲染变化。 SINGLE_COLUMN：把所有内容放到WebView组件等宽的一列中。
-		 * //这个是强制的，把网页都挤变形了 NARROW_COLUMNS：可能的话，使所有列的宽度不超过屏幕宽度。 //好像是默认的
-		 */
+         * //这个是强制的，把网页都挤变形了 NARROW_COLUMNS：可能的话，使所有列的宽度不超过屏幕宽度。 //好像是默认的
+         */
         webSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NARROW_COLUMNS);
         webSettings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         webSettings.setDefaultTextEncodingName("UTF-8");
@@ -134,11 +194,57 @@ public class WowanIndex extends AppCompatActivity implements SwipeRefreshLayout.
         webSettings.setRenderPriority(WebSettings.RenderPriority.HIGH);
         webSettings.setTextZoom(100);
 
-        mWebView.setWebChromeClient(new WebChromeClient());
+        mWebView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+                super.onProgressChanged(view, newProgress);
+                //记录最新的web进度
+                if (newProgress > mIntLoadingRealProgress) {
+                    mIntLoadingRealProgress = newProgress;
+                    //开始做进度progress展示
+                    if (mHandler != null && mRunnableProgress != null) {
+                        mHandler.removeCallbacks(mRunnableProgress);
+                        mHandler.post(mRunnableProgress);
+                    }
+                    if (showIndexLoading) {
+                        if (mRelativeLoading != null && mRelativeLoading.getVisibility() != View.VISIBLE) {
+                            mRelativeLoading.setVisibility(View.VISIBLE);
+                        }
+
+                        if (mProgressBar != null && mProgressBar.getVisibility() != View.VISIBLE) {
+                            mProgressBar.setVisibility(View.VISIBLE);
+                        }
+                    }
+
+
+                }
+
+            }
+        });
         mWebView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+
+                //做一手防御，2秒钟后进度消失
+                if ((mRelativeLoading != null && mRelativeLoading.getVisibility() == View.VISIBLE)
+                        || (mProgressBar != null && mProgressBar.getVisibility() == View.VISIBLE)) {
+                    mHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (mRelativeLoading != null && mRelativeLoading.getVisibility() == View.VISIBLE) {
+                                mRelativeLoading.setVisibility(View.GONE);
+                            }
+
+                            if (mProgressBar != null && mProgressBar.getVisibility() == View.VISIBLE) {
+                                mProgressBar.setVisibility(View.GONE);
+                            }
+
+                        }
+                    }, 2000);
+
+                }
+
                 if (null != mRefreshLayout) {
                     // 关闭加载进度条
                     mRefreshLayout.setRefreshing(false);
@@ -168,7 +274,7 @@ public class WowanIndex extends AppCompatActivity implements SwipeRefreshLayout.
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 // TODO Auto-generated method stub
                 if (!TextUtils.isEmpty(url)) {
-                    PlayMeUtil.openAdDetail(WowanIndex.this,cid, url);
+                    PlayMeUtil.openAdDetail(WowanIndex.this, cid, url);
                     return true;
                 } else {
                     return super.shouldOverrideUrlLoading(view, url);
@@ -215,6 +321,11 @@ public class WowanIndex extends AppCompatActivity implements SwipeRefreshLayout.
     protected void onDestroy() {
         super.onDestroy();
         mBooleanPageNeedLoad = false;
+
+        if (mHandler != null && mRunnableProgress != null) {
+            mHandler.removeCallbacks(mRunnableProgress);
+        }
+
         //回收AppManager
         AppManager.getInstance().AppExit(this);
     }

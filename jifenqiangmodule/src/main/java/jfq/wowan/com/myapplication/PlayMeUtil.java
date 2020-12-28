@@ -1,5 +1,6 @@
 package jfq.wowan.com.myapplication;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
@@ -61,6 +62,12 @@ public class PlayMeUtil {
      * @param authorities provider的author
      */
     public static void init(Application application, String authorities) {
+        init(application, authorities, false, false);
+    }
+
+    //重载初始化sdk，控制页面加载loading效果
+    @SuppressLint("CommitPrefEdits")
+    public static void init(Application application, String authorities, boolean showIndexLoading, boolean showDetailLoading) {
         if (application == null) {
             return;
         }
@@ -79,7 +86,11 @@ public class PlayMeUtil {
         //存入authorities
         authorities = TextUtils.isEmpty(authorities) ? application.getPackageName() + ".fileProvider" : authorities;
         SharedPreferences sp = application.getSharedPreferences("authorities", Activity.MODE_PRIVATE);
-        sp.edit().putString("authorities", authorities).commit();
+        SharedPreferences.Editor edit = sp.edit();
+        edit.putString("authorities", authorities);
+        edit.putBoolean("showIndexLoading", showIndexLoading);
+        edit.putBoolean("showDetailLoading", showDetailLoading);
+        edit.commit();
     }
 
     /**
@@ -128,6 +139,7 @@ public class PlayMeUtil {
         }
         md5Str = md5Str + "&keycode=" + keycode + "&issdk=1&sdkver=" + WowanIndex.mStringVer + "&oaid=" + oaid + "&osversion=" + osversion + "&phonemodel=" + phonemodel + "&adid=" + adid;
         String mStringUrl = "https://m.playmy.cn/View/Wall_AdInfo.aspx?" + md5Str;
+//        String mStringUrl = "http://test.playmy.cn/View/Wall_AdInfo.aspx?" + md5Str;
         if (!TextUtils.isEmpty(appid)) {
             mStringUrl = mStringUrl + "&appid=" + appid;
         }
@@ -150,7 +162,7 @@ public class PlayMeUtil {
      * @param key      秘钥
      */
     public static void openAdDetail(Context context, String cid, String cuid, String adid, String deviceid, String oaid, String key) {
-        openAdDetail(context, cid, cuid, adid, deviceid, adid, key, "", "");
+        openAdDetail(context, cid, cuid, adid, deviceid, oaid, key, "", "");
     }
 
 
