@@ -6,8 +6,18 @@ import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.net.http.SslError;
 import android.os.Build;
 import android.text.TextUtils;
+import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
+import android.webkit.SslErrorHandler;
+import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import com.liulishuo.filedownloader.FileDownloader;
 
@@ -211,5 +221,140 @@ public class PlayMeUtil {
         intent.putExtra("appname", appname);
         context.startActivity(intent);
     }
+
+    /**
+     * 将列表嵌入到某个viewgroup中
+     */
+    public static WebView addAdList(final Activity activity, ViewGroup viewGroup, final String cid, String cuid, String deviceid, String oaid, String key, String appid, String appname, final OnAddAdListCallBack onAddAdListCallBack) {
+        if (activity == null || viewGroup == null || TextUtils.isEmpty(cid) || TextUtils.isEmpty(cuid) || TextUtils.isEmpty(key)) {
+            if (onAddAdListCallBack != null) {
+                onAddAdListCallBack.onFaile(-1, "参数不合法");
+            }
+            return null;
+        }
+
+
+        //开始拼接链接
+        String md5Str = "t=2&cid=" + cid + "&cuid=" + cuid + "&deviceid=" + deviceid + "&unixt="
+                + System.currentTimeMillis();
+        String keycode = PlayMeUtil.encrypt(md5Str + key);
+
+        String osversion = "";
+        String phonemodel = "";
+        try {
+            osversion = Build.VERSION.RELEASE; // 操作系统版本号
+            phonemodel = Build.MODEL; // 手机型号
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        md5Str = md5Str + "&keycode=" + keycode + "&issdk=1&sdkver=1.0&oaid=" + oaid + "&osversion=" + osversion + "&phonemodel=" + phonemodel + "&listtype=1";
+
+        String url = "https://m.playmy.cn/View/Wall_AdList.aspx?" + md5Str;
+        if (!TextUtils.isEmpty(appid)) {
+            url = url + "&appid=" + appid;
+        }
+        if (!TextUtils.isEmpty(appname)) {
+            url = url + "&appname=" + URLEncoder.encode(appname);
+        }
+        //创建web并加载
+        WebView webView = new WebView(activity);
+        try {
+            webView.setVerticalScrollBarEnabled(false);
+            WebSettings webSettings = webView.getSettings();
+            webSettings.setJavaScriptEnabled(true);
+            webSettings.setAllowFileAccess(true);
+
+            // 允许混合模式（http与https）
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+            }
+
+            /*
+             * NORMAL：正常显示，没有渲染变化。 SINGLE_COLUMN：把所有内容放到WebView组件等宽的一列中。
+             * //这个是强制的，把网页都挤变形了 NARROW_COLUMNS：可能的话，使所有列的宽度不超过屏幕宽度。 //好像是默认的
+             */
+            webSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NARROW_COLUMNS);
+            webSettings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+            webSettings.setDefaultTextEncodingName("UTF-8");
+            // 提高渲染的优先级
+            webSettings.setRenderPriority(WebSettings.RenderPriority.HIGH);
+            webSettings.setTextZoom(100);
+
+            webView.setWebChromeClient(new WebChromeClient());
+
+            webView.setWebViewClient(new WebViewClient() {
+
+                private boolean hasSuccesed;
+
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    super.onPageFinished(view, url);
+                    if (!hasSuccesed && onAddAdListCallBack != null) {
+                        hasSuccesed = true;
+                        onAddAdListCallBack.onSuccess();
+                    }
+                }
+
+                @Override
+                public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                    // TODO Auto-generated method stub
+                    // super.onReceivedSslError(view, handler, error);
+                    // 接受所有网站的证书，忽略SSL错误，执行访问网页
+                    handler.proceed();
+                }
+
+                @Override
+                public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                    super.onPageStarted(view, url, favicon);
+
+                }
+
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                    // TODO Auto-generated method stub
+                    if (!TextUtils.isEmpty(url)) {
+                        PlayMeUtil.openAdDetail(activity, cid, url);
+                        return true;
+                    } else {
+                        return super.shouldOverrideUrlLoading(view, url);
+                    }
+
+                }
+            });
+
+            webView.addJavascriptInterface(new X5JavaScriptInterface(activity, webView), "android");
+
+            webView.loadUrl(url);
+
+            //将web添加到容器之中
+            viewGroup.removeAllViews();
+            ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            webView.setLayoutParams(params);
+            viewGroup.addView(webView);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (onAddAdListCallBack != null) {
+                onAddAdListCallBack.onFaile(-2, e.getMessage());
+            }
+        }
+
+        return webView;
+
+
+    }
+
+
+    public static WebView addAdList(Activity activity, ViewGroup viewGroup, String cid, String cuid, String deviceid, String oaid, String key, OnAddAdListCallBack onAddAdListCallBack) {
+        return addAdList(activity, viewGroup, cid, cuid, deviceid, oaid, key, "", "", onAddAdListCallBack);
+    }
+
+    public interface OnAddAdListCallBack {
+
+        void onSuccess();
+
+        void onFaile(int errorCode, String msg);
+    }
+
 
 }
